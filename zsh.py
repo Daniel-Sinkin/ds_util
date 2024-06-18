@@ -22,11 +22,15 @@ command_keys = list(zsh_commands.keys()) + list(python_scripts.keys())
 
 def list_commands():
     idx = 1
+    max_name_len = max(
+        max(len(name) for name in command_keys),
+        max(len(name) for name in python_scripts.keys()),
+    )
     for name, command in zsh_commands.items():
-        print(f"{idx:03d} - {name} - {command}")
+        print(f"{idx:03d} - {name.ljust(max_name_len)} - {command}")
         idx += 1
     for name, command in python_scripts.items():
-        print(f"{idx:03d} - {name} - {command}")
+        print(f"{idx:03d} - {name.ljust(max_name_len)} - {command}")
         idx += 1
 
 

@@ -15,6 +15,24 @@ class Colors:
     argname: str = "blue"
 
 
+@dataclass
+class Messages:
+    filepath_details: str = (
+        "'{file_path}' (lines={lines}, functions={functions}, classes={classes})"
+    )
+    class_header: str = "\t{lineno:4} {class_name}"
+    function_detail: str = (
+        "\t\t{lineno:4} {function_name}({args_with_hints}) -> {return_type}{link}"
+    )
+    standalone_function: str = (
+        "{lineno:04} {function_name}({args_with_hints}) -> {return_type}{link}"
+    )
+    error_processing: str = "Error processing {file_path}: {error}"
+    summary: str = (
+        "\nTotal: Files={total_files}, Lines={total_lines}, Functions={total_functions}, Classes={total_classes}"
+    )
+
+
 def list_classes_and_functions(script_path):
     with open(script_path, "r") as file:
         tree = ast.parse(file.read(), filename=script_path)
@@ -88,11 +106,16 @@ def process_file(
             import_details.sort(key=lambda x: x[0], reverse=reverse)
 
         print(
-            f"'{colored(os.path.abspath(file_path), Colors.filepath)}' (lines={len(lines)}, functions={len(function_details) + sum(len(cls['functions']) for cls in class_details)}, classes={len(class_details)})"
+            Messages.filepath_details.format(
+                file_path=colored(os.path.abspath(file_path), Colors.filepath),
+                lines=len(lines),
+                functions=len(function_details)
+                + sum(len(cls["functions"]) for cls in class_details),
+                classes=len(class_details),
+            )
         )
 
         if show_imports:
-            print("Imports:")
             for lineno, import_stmt in import_details:
                 print(f"{lineno:6} {import_stmt}")
             print()
@@ -101,7 +124,11 @@ def process_file(
             for cls in class_details:
                 base_classes = f"({', '.join(cls['bases'])})" if cls["bases"] else ""
                 class_name = f"{colored(cls['name'], Colors.classname)}{base_classes}"
-                print(f"\t{cls['lineno']:4} {class_name}")
+                print(
+                    Messages.class_header.format(
+                        lineno=cls["lineno"], class_name=class_name
+                    )
+                )
                 for func in cls["functions"]:
                     args_with_hints = ", ".join(
                         f"{colored(arg.arg, Colors.argname)}: {ast.unparse(arg.annotation) if arg.annotation and arg.arg != 'self' else ''}"
@@ -116,7 +143,13 @@ def process_file(
                         else ""
                     )
                     print(
-                        f"\t\t{func[1]:4} {function_name}({args_with_hints}) -> {return_type}{link}"
+                        Messages.function_detail.format(
+                            lineno=func[1],
+                            function_name=function_name,
+                            args_with_hints=args_with_hints,
+                            return_type=return_type,
+                            link=link,
+                        )
                     )
 
             for func in function_details:
@@ -133,24 +166,57 @@ def process_file(
                     else ""
                 )
                 print(
-                    f"{func[1]:04} {function_name}({args_with_hints}) -> {return_type}{link}"
+                    Messages.standalone_function.format(
+                        lineno=func[1],
+                        function_name=function_name,
+                        args_with_hints=args_with_hints,
+                        return_type=return_type,
+                        link=link,
+                    )
                 )
 
+        return (
+            len(lines),
+            len(function_details) + sum(len(cls["functions"]) for cls in class_details),
+            len(class_details),
+        )
+
     except Exception as e:
-        print(f"Error processing {file_path}: {e}", file=sys.stderr)
+        print(
+            Messages.error_processing.format(file_path=file_path, error=e),
+            file=sys.stderr,
+        )
+        return 0, 0, 0
 
 
 def process_directory(
     directory, sort_items, sort_desc, header_only, show_imports, line_links
 ):
+    total_files = 0
+    total_lines = 0
+    total_functions = 0
+    total_classes = 0
+
     for file in os.listdir(directory):
         file_path = os.path.join(directory, file)
         if os.path.isfile(file_path) and file.endswith(".py"):
             print()
-            process_file(
+            lines, functions, classes = process_file(
                 file_path, sort_items, sort_desc, header_only, show_imports, line_links
             )
-    print()
+            total_files += 1
+            total_lines += lines
+            total_functions += functions
+            total_classes += classes
+
+    print(
+        Messages.summary.format(
+            total_files=total_files,
+            total_lines=total_lines,
+            total_functions=total_functions,
+            total_classes=total_classes,
+        )
+    )
 
 
 def main():
@@ -195,9 +261,14 @@ def main():
         print("Error: Cannot use --sorted and --sorted_desc together.")
         sys.exit(1)
 
+    total_files = 0
+    total_lines = 0
+    total_functions = 0
+    total_classes = 0
+
     for path in args.paths:
         if os.path.isfile(path) and path.endswith(".py"):
-            process_file(
+            lines, functions, classes = process_file(
                 path,
                 args.sorted,
                 args.sorted_desc,
@@ -205,6 +276,10 @@ def main():
                 args.show_imports,
                 args.line_links,
             )
+            total_files += 1
+            total_lines += lines
+            total_functions += functions
+            total_classes += classes
         elif os.path.isdir(path):
             process_directory(
                 path,
