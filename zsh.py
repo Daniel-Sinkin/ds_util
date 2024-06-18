@@ -7,6 +7,7 @@ zsh_commands = {
     "zshrc": "nvim ~/.zshrc",
     "ds_util": "code /Users/danielsinkin/GitHub_private/ds_util/",
     "obsidian": "code /Users/danielsinkin/GitHub_private/Obsidian/",
+    "opengl": "code /Users/danielsinkin/GitHub_private/opengl/",
     "jpk": "code /Users/danielsinkin/GitHub/jpk-core/",
     "trb": "code /Users/danielsinkin/GitHub/tr-jpk-brokerfacade/",
 }
