@@ -1,5 +1,5 @@
 import argparse
-import ast
+import ast  # Abstract Syntax Tree
 import os
 import sys
 from dataclasses import dataclass

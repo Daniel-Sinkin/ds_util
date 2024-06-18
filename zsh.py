@@ -1,32 +1,54 @@
 import subprocess
 import sys
 
-zsh_commands = [
-    "ssh-add ~/.ssh/id_ed25519",
-    "ssh-add ~/.ssh/github_private",
-    "nvim ~/.zshrc",
-]
+zsh_commands = {
+    "ssh_work": "ssh-add ~/.ssh/id_ed25519",
+    "ssh_private": "ssh-add ~/.ssh/github_private",
+    "zshrc": "nvim ~/.zshrc",
+    "ds_util": "code /Users/danielsinkin/GitHub_private/ds_util/",
+    "obsidian": "code /Users/danielsinkin/GitHub_private/Obsidian/",
+    "jpk": "code /Users/danielsinkin/GitHub/jpk-core/",
+    "trb": "code /Users/danielsinkin/GitHub/tr-jpk-brokerfacade/",
+}
 
-python_scripts = [
-    "python3 /Users/danielsinkin/GitHub_private/ds_util/ast_explorer.py",
-]
+python_scripts = {
+    "ast": "python3 /Users/danielsinkin/GitHub_private/ds_util/ast_explorer.py",
+    "link": "python3 /Users/danielsinkin/GitHub_private/ds_util/linker.py",
+}
 
-commands = zsh_commands + python_scripts
+commands = list(zsh_commands.values()) + list(python_scripts.values())
+command_keys = list(zsh_commands.keys()) + list(python_scripts.keys())
 
 
 def list_commands():
-    for idx, command in enumerate(commands, 1):
-        print(f"{idx:03d}. {command}")
+    idx = 1
+    for name, command in zsh_commands.items():
+        print(f"{idx:03d} - {name} - {command}")
+        idx += 1
+    for name, command in python_scripts.items():
+        print(f"{idx:03d} - {name} - {command}")
+        idx += 1
 
 
-def execute_command(index, args):
+def execute_command(command_key, args):
     try:
-        command = commands[index - 1]
+        if command_key.isdigit():
+            index = int(command_key) - 1
+            command = commands[index]
+        else:
+            if command_key in zsh_commands:
+                command = zsh_commands[command_key]
+            elif command_key in python_scripts:
+                command = python_scripts[command_key]
+            else:
+                raise KeyError
+
         if command.startswith("python3"):
             command += " " + " ".join(args)
+
         subprocess.run(command, shell=True, check=True)
-    except IndexError:
-        print(f"Invalid command number: {index}")
+    except (IndexError, KeyError):
+        print(f"Invalid command: {command_key}")
     except subprocess.CalledProcessError as e:
         print(f"Command failed: {e}")
 
@@ -34,9 +56,7 @@ def execute_command(index, args):
 if __name__ == "__main__":
     if len(sys.argv) == 1:
         list_commands()
-    elif len(sys.argv) >= 2 and sys.argv[1].isdigit():
-        command_index = int(sys.argv[1])
-        command_args = sys.argv[2:]
-        execute_command(command_index, command_args)
     else:
-        print("Usage: script.py [command_number] [args...]")
+        command_key = sys.argv[1]
+        command_args = sys.argv[2:]
+        execute_command(command_key, command_args)
