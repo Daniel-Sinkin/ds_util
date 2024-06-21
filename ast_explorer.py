@@ -28,9 +28,7 @@ class Messages:
         "{lineno:04} {function_name}({args_with_hints}) -> {return_type}{link}"
     )
     error_processing: str = "Error processing {file_path}: {error}"
-    summary: str = (
-        "\nTotal: Files={total_files}, Lines={total_lines}, Functions={total_functions}, Classes={total_classes}"
-    )
+    summary: str = "\nTotal: Files={total_files}, Lines={total_lines}, Functions={total_functions}, Classes={total_classes}"
 
 
 def list_classes_and_functions(script_path):
@@ -131,7 +129,7 @@ def process_file(
                 )
                 for func in cls["functions"]:
                     args_with_hints = ", ".join(
-                        f"{colored(arg.arg, Colors.argname)}: {ast.unparse(arg.annotation) if arg.annotation and arg.arg != 'self' else ''}"
+                        f"{colored(arg.arg, Colors.argname)}{': ' + ast.unparse(arg.annotation) if arg.annotation and arg.arg != 'self' else ''}"
                         for arg in func[2]
                         if not (arg.arg == "self" and not arg.annotation)
                     )
