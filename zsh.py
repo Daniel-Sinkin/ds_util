@@ -1,6 +1,10 @@
 import subprocess
 import sys
 
+from colorama import Fore, Style, init
+
+init(autoreset=True)
+
 zsh_commands = {
     "ssh_work": "ssh-add ~/.ssh/id_ed25519",
     "ssh_private": "ssh-add ~/.ssh/github_private",
@@ -28,10 +32,14 @@ def list_commands():
         max(len(name) for name in python_scripts.keys()),
     )
     for name, command in zsh_commands.items():
-        print(f"{idx:03d} - {name.ljust(max_name_len)} - {command}")
+        print(
+            f"{Fore.GREEN}{idx:03d}{Style.RESET_ALL} - {Fore.CYAN}{name.ljust(max_name_len)}{Style.RESET_ALL} - {Fore.YELLOW}{command}{Style.RESET_ALL}"
+        )
         idx += 1
     for name, command in python_scripts.items():
-        print(f"{idx:03d} - {name.ljust(max_name_len)} - {command}")
+        print(
+            f"{Fore.GREEN}{idx:03d}{Style.RESET_ALL} - {Fore.CYAN}{name.ljust(max_name_len)}{Style.RESET_ALL} - {Fore.YELLOW}{command}{Style.RESET_ALL}"
+        )
         idx += 1
 
 
@@ -53,9 +61,9 @@ def execute_command(command_key, args):
 
         subprocess.run(command, shell=True, check=True)
     except (IndexError, KeyError):
-        print(f"Invalid command: {command_key}")
+        print(f"{Fore.RED}Invalid command: {command_key}{Style.RESET_ALL}")
     except subprocess.CalledProcessError as e:
-        print(f"Command failed: {e}")
+        print(f"{Fore.RED}Command failed: {e}{Style.RESET_ALL}")
 
 
 if __name__ == "__main__":
