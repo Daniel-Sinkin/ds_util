@@ -1,12 +1,13 @@
 import subprocess
 import sys
 
+import colorama
 import pyperclip
-from colorama import Fore, Style, init
+from colorama import Fore, Style
 
-init(autoreset=True)
+colorama.init(autoreset=True)
 
-zsh_commands = {
+zsh_commands: dict[str, str] = {
     "ssh_work": "ssh-add ~/.ssh/id_ed25519",
     "ssh_private": "ssh-add ~/.ssh/github_private",
     "zshrc": "nvim ~/.zshrc",
@@ -15,14 +16,25 @@ zsh_commands = {
     "opengl": "code /Users/danielsinkin/GitHub_private/opengl/",
     "jpk": "code /Users/danielsinkin/GitHub/jpk-core/",
     "trb": "code /Users/danielsinkin/GitHub/tr-jpk-brokerfacade/",
+    "nn_visualizer": "code /Users/danielsinkin/GitHub_private/nn_visualizer/",
 }
 
-python_scripts = {
+python_scripts: dict[str, str] = {
     "ast": "python3 /Users/danielsinkin/GitHub_private/ds_util/ast_explorer.py",
     "link": "python3 /Users/danielsinkin/GitHub_private/ds_util/linker.py",
 }
 
-snippets = {"hello_world": "Hello, World!"}
+snippets: dict[str, str] = {
+    "hello_world": "Hello, World!",
+    "syncmain": """
+def main():
+    pass
+
+
+if __name__ == '__main__':
+    main()   
+""",
+}
 
 commands = (
     list(zsh_commands.values())
