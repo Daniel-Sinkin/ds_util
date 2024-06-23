@@ -31,7 +31,7 @@ class Messages:
     summary: str = "\nTotal: Files={total_files}, Lines={total_lines}, Functions={total_functions}, Classes={total_classes}"
 
 
-def list_classes_and_functions(script_path):
+def list_classes_and_functions(script_path, *args, **kwargs):
     with open(script_path, "r") as file:
         tree = ast.parse(file.read(), filename=script_path)
 
@@ -85,7 +85,14 @@ def list_classes_and_functions(script_path):
 
 
 def process_file(
-    file_path, sort_items, sort_desc, header_only, show_imports, line_links
+    file_path,
+    sort_items,
+    sort_desc,
+    header_only,
+    show_imports,
+    line_links,
+    *args,
+    **kwargs,
 ):
     try:
         with open(file_path, "r") as file:
@@ -188,7 +195,14 @@ def process_file(
 
 
 def process_directory(
-    directory, sort_items, sort_desc, header_only, show_imports, line_links
+    directory,
+    sort_items,
+    sort_desc,
+    header_only,
+    show_imports,
+    line_links,
+    *args,
+    **kwargs,
 ):
     total_files = 0
     total_lines = 0
@@ -217,7 +231,7 @@ def process_directory(
     )
 
 
-def main():
+def main(*args, **kwargs):
     parser = argparse.ArgumentParser(
         description="Process some Python files or directories."
     )
