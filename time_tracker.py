@@ -45,6 +45,8 @@ class TimeTracker:
                 dict[str, TimetrackingProject], json.load(f)
             )
 
+        self.save_on_close = True
+
     def save_data(self) -> None:
         with open(self.local_folderpath, "w") as f:
             json.dump(self.data, f, indent=4)
@@ -112,9 +114,30 @@ class TimeTracker:
             print()
 
     def __del__(self) -> None:
-        print("Starting to save the data.")
-        self.save_data()
-        print("Data saved.")
+        if self.save_on_close:
+            print("Starting to save the data.")
+            self.save_data()
+            print("Data saved.")
+
+    def clear_data(self) -> None:
+        response = (
+            input("Are you sure you want to delete data.json? (y/n/b for backup): ")
+            .strip()
+            .lower()
+        )
+        if response == "y":
+            os.remove(self.local_folderpath)
+            print("data.json has been deleted.")
+            self.save_on_close = False
+        elif response == "b":
+            backup_path = self.local_folderpath + ".backup"
+            shutil.copy2(self.local_folderpath, backup_path)
+            os.remove(self.local_folderpath)
+            print(
+                f"Backup created and data.json has been deleted. Backup path: {backup_path}"
+            )
+        else:
+            print("Operation cancelled.")
 
 
 def is_data() -> bool:
@@ -174,7 +197,7 @@ def main() -> None:
         return
 
     if args.clear:
-        clear_data(time_tracker)
+        time_tracker.clear_data()
         return
 
     project_name = str(args.project if args.project else "NO_NAME")
@@ -189,7 +212,7 @@ def main() -> None:
     try:
         while not is_data():
             elapsed_time: float = time.time() - t0
-            formatted_time: str = format_pretty_time(elapsed_time * 1463)
+            formatted_time: str = format_pretty_time(elapsed_time)
             print(f"\r{formatted_time} elapsed.", end="")
             sys.stdout.flush()
             time.sleep(PRINT_DELAY)
@@ -201,26 +224,6 @@ def main() -> None:
 
     time_tracker.stop_tracking(project_name)
     print("\nTracking stopped.")
-
-
-def clear_data(time_tracker: TimeTracker) -> None:
-    response = (
-        input("Are you sure you want to delete data.json? (y/n/b for backup): ")
-        .strip()
-        .lower()
-    )
-    if response == "y":
-        os.remove(time_tracker.local_folderpath)
-        print("data.json has been deleted.")
-    elif response == "b":
-        backup_path = time_tracker.local_folderpath + ".backup"
-        shutil.copy2(time_tracker.local_folderpath, backup_path)
-        os.remove(time_tracker.local_folderpath)
-        print(
-            f"Backup created and data.json has been deleted. Backup path: {backup_path}"
-        )
-    else:
-        print("Operation cancelled.")
 
 
 if __name__ == "__main__":
