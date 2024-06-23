@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import select
+import shutil
 import sys
 import termios
 import time
@@ -152,6 +153,11 @@ def main() -> None:
     )
     parser.add_argument("-n", "--new_project", type=str, help="Register a new project")
     parser.add_argument("-t", "--tags", nargs="*", help="Tags for the new project")
+    parser.add_argument(
+        "--clear",
+        action="store_true",
+        help="Clear the data.json file with confirmation",
+    )
 
     args = parser.parse_args()
 
@@ -165,6 +171,10 @@ def main() -> None:
         project_name = args.new_project
         tags = cast(list[str], args.tags if args.tags else [])
         time_tracker.register_new_project(project_name, tags)
+        return
+
+    if args.clear:
+        clear_data(time_tracker)
         return
 
     project_name = str(args.project if args.project else "NO_NAME")
@@ -191,6 +201,26 @@ def main() -> None:
 
     time_tracker.stop_tracking(project_name)
     print("\nTracking stopped.")
+
+
+def clear_data(time_tracker: TimeTracker) -> None:
+    response = (
+        input("Are you sure you want to delete data.json? (y/n/b for backup): ")
+        .strip()
+        .lower()
+    )
+    if response == "y":
+        os.remove(time_tracker.local_folderpath)
+        print("data.json has been deleted.")
+    elif response == "b":
+        backup_path = time_tracker.local_folderpath + ".backup"
+        shutil.copy2(time_tracker.local_folderpath, backup_path)
+        os.remove(time_tracker.local_folderpath)
+        print(
+            f"Backup created and data.json has been deleted. Backup path: {backup_path}"
+        )
+    else:
+        print("Operation cancelled.")
 
 
 if __name__ == "__main__":
