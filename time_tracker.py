@@ -6,13 +6,24 @@ import sys
 import termios
 import time
 import tty
-from typing import Optional
+from typing import Optional, TypedDict, cast
 
 SECOND_TO_MS = 1e3
-MS_TO_SECOND = 1e-3
+MS_TO_SECOND = 0.001
 
 PRINT_DELAY = 0.3
 SAVE_DELAY = 10.0
+
+
+class Entry(TypedDict):
+    start: int
+    stop: Optional[int]
+    comment: str
+
+
+class TimetrackingProject(TypedDict):
+    tags: list[str]
+    entries: list[Entry]
 
 
 class TimeTracker:
@@ -29,7 +40,9 @@ class TimeTracker:
                 json.dump({}, f)
 
         with open(self.local_folderpath, "r") as f:
-            self.data = json.load(f)
+            self.data: dict[str, TimetrackingProject] = cast(
+                dict[str, TimetrackingProject], json.load(f)
+            )
 
     def save_data(self) -> None:
         with open(self.local_folderpath, "w") as f:
@@ -48,6 +61,8 @@ class TimeTracker:
             "tags": tags or [],
             "entries": [],
         }
+        self.save_data()
+        print(f"Registered new project: {project_name} with tags: {tags or []}")
 
     def start_tracking(
         self,
@@ -79,7 +94,21 @@ class TimeTracker:
         for entry in self.data[project_name]["entries"]:
             if entry["stop"] is not None:
                 total_time_ms += entry["stop"] - entry["start"]
-        return total_time_ms / SECOND_TO_MS
+        return total_time_ms * MS_TO_SECOND
+
+    def list_projects(self) -> None:
+        for project_name, project_data in self.data.items():
+            total_time: float = self.get_total_time_in_project(project_name)
+            tags: list[str] = project_data["tags"]
+            formatted_time: str = format_pretty_time(total_time)
+            if tags:
+                formatted_tags: str = f"\n\tTags:\n\t\t{tags}"
+            else:
+                formatted_tags: str = ""
+            print(
+                f"{project_name}\n\tTime Passed:\n\t\t{formatted_time}{formatted_tags}"
+            )
+            print()
 
     def __del__(self) -> None:
         print("Starting to save the data.")
@@ -91,23 +120,51 @@ def is_data() -> bool:
     return select.select([sys.stdin], [], [], 0) == ([sys.stdin], [], [])
 
 
+def format_pretty_time(seconds: float) -> str:
+    days, seconds = divmod(seconds, 86400)
+    hours, seconds = divmod(seconds, 3600)
+    minutes, seconds = divmod(seconds, 60)
+    result = []
+    if days > 0:
+        result.append(f"{int(days)} day{'s' if days > 1 else ''}")
+    if hours > 0:
+        result.append(f"{int(hours)} hour{'s' if hours > 1 else ''}")
+    if minutes > 0:
+        result.append(f"{int(minutes)} minute{'s' if minutes > 1 else ''}")
+    if seconds > 0 or not result:
+        result.append(f"{seconds:.3f} second{'s' if seconds != 1 else ''}")
+    return " ".join(result)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Time Tracking Application")
     parser.add_argument(
-        "-p", "--project", type=str, help="Project name to start tracking"
+        "project", nargs="?", type=str, help="Project name to start tracking"
     )
     parser.add_argument(
         "-c", "--comment", type=str, help="Comment for the tracking entry"
     )
-    parser.add_argument("-ls", "--list", action="store_true", help="List all data")
+    parser.add_argument(
+        "-ls",
+        "--list",
+        action="store_true",
+        help="List all projects with their total runtime and tags",
+    )
+    parser.add_argument("-n", "--new_project", type=str, help="Register a new project")
+    parser.add_argument("-t", "--tags", nargs="*", help="Tags for the new project")
 
     args = parser.parse_args()
 
     time_tracker = TimeTracker()
 
     if args.list:
-        with open(time_tracker.local_folderpath, "r") as f:
-            print(json.dumps(json.load(f), indent=4))
+        time_tracker.list_projects()
+        return
+
+    if args.new_project:
+        project_name = args.new_project
+        tags = cast(list[str], args.tags if args.tags else [])
+        time_tracker.register_new_project(project_name, tags)
         return
 
     project_name = str(args.project if args.project else "NO_NAME")
@@ -116,17 +173,17 @@ def main() -> None:
     print(f"Started tracking project: {project_name}")
 
     t0: float = time.time()
-    time_until_next_save = t0 + SAVE_DELAY
+    time_until_next_save: float = t0 + SAVE_DELAY
     old_settings = termios.tcgetattr(sys.stdin)
     tty.setcbreak(sys.stdin.fileno())
     try:
         while not is_data():
-            elapsed_time = time.time() - t0
-            print(f"\r{elapsed_time:7.0f} seconds elapsed.", end="")
+            elapsed_time: float = time.time() - t0
+            formatted_time: str = format_pretty_time(elapsed_time * 1463)
+            print(f"\r{formatted_time} elapsed.", end="")
             sys.stdout.flush()
             time.sleep(PRINT_DELAY)
             if time.time() > time_until_next_save:
-                assert False
                 time_tracker.save_data()
                 time_until_next_save = time.time() + SAVE_DELAY
     finally:
