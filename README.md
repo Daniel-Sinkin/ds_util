@@ -3,7 +3,7 @@ Utility scripts that I'm using
 
 My custom .zshrc contents:
 ```bash
-alias code.='code .'
+[alias code.='code .'
 
 alias obsidian='open -a /Applications/Obsidian.app'
 
@@ -21,5 +21,5 @@ dspy.link=python3 /Users/danielsinkin/GitHub_private/ds_util/linker.py
 
 alias dspy.ast="python3 /Users/danielsinkin/GitHub_private/ds_util/ast_explorer.py"
 alias dspy.zsh="python3 /Users/danielsinkin/GitHub_private/ds_util/zsh.py"
-alias dspy.link="python3 /Users/danielsinkin/GitHub_private/ds_util/linker.py"
+alias dspy.link="python3 /Users/danielsinkin/GitHub_private/ds_util/linker.py"](https://github.com/Daniel-Sinkin/ds_util)
 ```
