@@ -91,6 +91,7 @@ def process_file(
     header_only,
     show_imports,
     line_links,
+    summary_only,
     *args,
     **kwargs,
 ):
@@ -110,33 +111,60 @@ def process_file(
             function_details.sort(key=lambda x: x[0], reverse=reverse)
             import_details.sort(key=lambda x: x[0], reverse=reverse)
 
-        print(
-            Messages.filepath_details.format(
-                file_path=colored(os.path.abspath(file_path), Colors.filepath),
-                lines=len(lines),
-                functions=len(function_details)
-                + sum(len(cls["functions"]) for cls in class_details),
-                classes=len(class_details),
-            )
-        )
-
-        if show_imports:
-            for lineno, import_stmt in import_details:
-                print(f"{lineno:6} {import_stmt}")
-            print()
-
-        if not header_only:
-            for cls in class_details:
-                base_classes = f"({', '.join(cls['bases'])})" if cls["bases"] else ""
-                class_name = f"{colored(cls['name'], Colors.classname)}{base_classes}"
-                print(
-                    Messages.class_header.format(
-                        lineno=cls["lineno"], class_name=class_name
-                    )
+        if not summary_only:
+            print(
+                Messages.filepath_details.format(
+                    file_path=colored(os.path.abspath(file_path), Colors.filepath),
+                    lines=len(lines),
+                    functions=len(function_details)
+                    + sum(len(cls["functions"]) for cls in class_details),
+                    classes=len(class_details),
                 )
-                for func in cls["functions"]:
+            )
+
+            if show_imports:
+                for lineno, import_stmt in import_details:
+                    print(f"{lineno:6} {import_stmt}")
+
+            if not header_only:
+                for cls in class_details:
+                    base_classes = (
+                        f"({', '.join(cls['bases'])})" if cls["bases"] else ""
+                    )
+                    class_name = (
+                        f"{colored(cls['name'], Colors.classname)}{base_classes}"
+                    )
+                    print(
+                        Messages.class_header.format(
+                            lineno=cls["lineno"], class_name=class_name
+                        )
+                    )
+                    for func in cls["functions"]:
+                        args_with_hints = ", ".join(
+                            f"{colored(arg.arg, Colors.argname)}{': ' + ast.unparse(arg.annotation) if arg.annotation and arg.arg != 'self' else ''}"
+                            for arg in func[2]
+                            if not (arg.arg == "self" and not arg.annotation)
+                        )
+                        return_type = ast.unparse(func[3]) if func[3] else "None"
+                        function_name = f"{colored(func[0], Colors.functionname)}"
+                        link = (
+                            f" (vscode://file/{os.path.abspath(file_path)}:{func[1]})"
+                            if line_links
+                            else ""
+                        )
+                        print(
+                            Messages.function_detail.format(
+                                lineno=func[1],
+                                function_name=function_name,
+                                args_with_hints=args_with_hints,
+                                return_type=return_type,
+                                link=link,
+                            )
+                        )
+
+                for func in function_details:
                     args_with_hints = ", ".join(
-                        f"{colored(arg.arg, Colors.argname)}{': ' + ast.unparse(arg.annotation) if arg.annotation and arg.arg != 'self' else ''}"
+                        f"{colored(arg.arg, Colors.argname)}: {ast.unparse(arg.annotation) if arg.annotation and arg.arg != 'self' else ''}"
                         for arg in func[2]
                         if not (arg.arg == "self" and not arg.annotation)
                     )
@@ -148,7 +176,7 @@ def process_file(
                         else ""
                     )
                     print(
-                        Messages.function_detail.format(
+                        Messages.standalone_function.format(
                             lineno=func[1],
                             function_name=function_name,
                             args_with_hints=args_with_hints,
@@ -156,29 +184,6 @@ def process_file(
                             link=link,
                         )
                     )
-
-            for func in function_details:
-                args_with_hints = ", ".join(
-                    f"{colored(arg.arg, Colors.argname)}: {ast.unparse(arg.annotation) if arg.annotation and arg.arg != 'self' else ''}"
-                    for arg in func[2]
-                    if not (arg.arg == "self" and not arg.annotation)
-                )
-                return_type = ast.unparse(func[3]) if func[3] else "None"
-                function_name = f"{colored(func[0], Colors.functionname)}"
-                link = (
-                    f" (vscode://file/{os.path.abspath(file_path)}:{func[1]})"
-                    if line_links
-                    else ""
-                )
-                print(
-                    Messages.standalone_function.format(
-                        lineno=func[1],
-                        function_name=function_name,
-                        args_with_hints=args_with_hints,
-                        return_type=return_type,
-                        link=link,
-                    )
-                )
 
         return (
             len(lines),
@@ -201,6 +206,7 @@ def process_directory(
     header_only,
     show_imports,
     line_links,
+    summary_only,
     *args,
     **kwargs,
 ):
@@ -212,23 +218,29 @@ def process_directory(
     for file in os.listdir(directory):
         file_path = os.path.join(directory, file)
         if os.path.isfile(file_path) and file.endswith(".py"):
-            print()
             lines, functions, classes = process_file(
-                file_path, sort_items, sort_desc, header_only, show_imports, line_links
+                file_path,
+                sort_items,
+                sort_desc,
+                header_only,
+                show_imports,
+                line_links,
+                summary_only,
             )
             total_files += 1
             total_lines += lines
             total_functions += functions
             total_classes += classes
 
-    print(
-        Messages.summary.format(
-            total_files=total_files,
-            total_lines=total_lines,
-            total_functions=total_functions,
-            total_classes=total_classes,
+    if not summary_only:
+        print(
+            Messages.summary.format(
+                total_files=total_files,
+                total_lines=total_lines,
+                total_functions=total_functions,
+                total_classes=total_classes,
+            )
         )
-    )
 
 
 def main(*args, **kwargs):
@@ -266,6 +278,11 @@ def main(*args, **kwargs):
         action="store_true",
         help="Include clickable VSCode file links for function definitions.",
     )
+    parser.add_argument(
+        "--summary_only",
+        action="store_true",
+        help="Only print out folder examined and the summary of total number of lines, files, and classes.",
+    )
 
     args = parser.parse_args()
 
@@ -287,6 +304,7 @@ def main(*args, **kwargs):
                 args.header_only,
                 args.show_imports,
                 args.line_links,
+                args.summary_only,
             )
             total_files += 1
             total_lines += lines
@@ -300,9 +318,20 @@ def main(*args, **kwargs):
                 args.header_only,
                 args.show_imports,
                 args.line_links,
+                args.summary_only,
             )
         else:
             print(f"Skipping non-Python file: {path}")
+
+    if args.summary_only:
+        print(
+            Messages.summary.format(
+                total_files=total_files,
+                total_lines=total_lines,
+                total_functions=total_functions,
+                total_classes=total_classes,
+            )
+        )
 
 
 if __name__ == "__main__":
