@@ -18,7 +18,7 @@ links: dict[str, str] = {
     "github_trb_pulls": "https://github.com/drkv-com/tr-jpk-brokerfacade/pulls",
     "grafana": "https://drkv.grafana.net/a/cloud-home-app",
     "opengl": "https://learnopengl.com",
-    "d2l": "https://learn.d2l.ai",
+    "d2l": "https://d2l.ai",
     "gpt": "https://chatgpt.com/?model=gpt-4o",
 }
 
