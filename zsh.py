@@ -12,17 +12,15 @@ zsh_commands: dict[str, str] = {
     "ssh_private": "ssh-add ~/.ssh/github_private",
     "zshrc": "nvim ~/.zshrc",
     "ds_util": "code /Users/danielsinkin/GitHub_private/ds_util/",
-    "obsidian": "code /Users/danielsinkin/GitHub_private/Obsidian/",
-    "opengl": "code /Users/danielsinkin/GitHub_private/opengl/",
     "jpk": "code /Users/danielsinkin/GitHub/jpk-core/",
     "trb": "code /Users/danielsinkin/GitHub/tr-jpk-brokerfacade/",
-    "nn_visualizer": "code /Users/danielsinkin/GitHub_private/nn_visualizer/",
 }
 
 python_scripts: dict[str, str] = {
-    "ast": "python3 /Users/danielsinkin/GitHub_private/ds_util/ast_explorer.py",
-    "link": "python3 /Users/danielsinkin/GitHub_private/ds_util/linker.py",
+    "jpk": "code /Users/danielsinkin/GitHub/jpk-core/",
+    "trb": "code /Users/danielsinkin/GitHub/tr-jpk-brokerfacade/",
 }
+
 
 snippets: dict[str, str] = {
     "hello_world": "Hello, World!",
